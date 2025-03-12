@@ -17,6 +17,29 @@ deck = [
     "W+4", "W+4", "WJ", "WJ"
 ]
 
+weights = {
+    "0": 0,
+    "1": 1,
+    "2": 2,
+    "3": 3,
+    "4": 4,
+    "5": 5,
+    "6": 6,
+    "7": 7,
+    "8": 8,
+    "9": 9,
+    "Rev": 20,
+    "Skip": 20,
+    "+4": 15,
+    "J": 10
+}
+
+# Skip Lets you skip your turn
+# Draw 4 lets you see your cards 
+# Reverse Lets you Reverse any power-up applied on you
+# Wild Card Lets you See the and Shuffle any opponent's cards
+# 7 of any color Lets you swap your one card with any card of any opponent
+
 P1 = []
 P2 = []
 P3 = []
@@ -45,7 +68,19 @@ P2 = assignCards()
 P3 = assignCards()
 P4 = assignCards()
 
-print(P1)
+def draw4():
+    pass
+
+def reverse():
+    pass
+
+def wild():
+    pass
+
+def seven():
+    pass
+
+#print(P1)
 #print(P2)
 #print(P3)
 #print(P4)
@@ -58,13 +93,47 @@ def turn(Player, card):
     else:
         Player = exchange(choice - 1, Player, card)
         print(Player)
+    return card
         
 def cost():
     pass
 
+def lastcard(card):
+    return card[1:len(card)]
+
+
+last = ""
+
+flag1 = False
+flag2 = False
+
 while len(deck) > 0:
-    turn(Player = P1, card = pick())
-    turn(Player = P2, card = pick())
-    turn(Player = P3, card = pick())
-    turn(Player = P4, card = pick())  
+    
+    if lastcard(last) == "Skip":      
+        last = turn(Player = P2, card = pick())
+        flag1 = True
+    else:
+        last = turn(Player = P1, card = pick())
+        
+    if lastcard(last) == "Skip" or flag1:
+        last = turn(Player = P3, card = pick())
+        flag2 = True
+        flag1 = False
+    else:
+        last = turn(Player = P2, card = pick())
+        
+    if lastcard(last) == "Skip":
+        last = turn(Player = P4, card = pick())
+    else:
+        last = turn(Player = P3, card = pick())
+        
+    if lastcard(last) == "Skip":
+        last = turn(Player = P2, card = pick())      
+    else:
+        last = turn(Player = P4, card = pick())  
+    
+    #last = turn(Player = P1, card = pick())
+    #last = turn(Player = P2, card = pick())
+    #last = turn(Player = P3, card = pick())
+    #last = turn(Player = P4, card = pick())  
     break
