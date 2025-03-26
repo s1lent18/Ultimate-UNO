@@ -136,7 +136,9 @@ flag2 = False
 while len(deck) > 0:
     printall(P1, P2, P3, P4)
     if str(lastcard(last)) == "Skip" or flag2:
+        
         print("Turn of Player 2")      
+        
         last = turn(Player = P2, card = pick())
         
         print(lastcard(last))
@@ -152,6 +154,7 @@ while len(deck) > 0:
                 P2, P3 = seven(P2, P3, int(me), int(card))
             elif change == "4":
                 P2, P4 = seven(P2, P4, int(me), int(card))
+                
         elif str(lastcard(last)) == "9":
             changePlayer = str(input("Enter the number of the player you want to see and shuffle the card of: "))
             if changePlayer == "1":
@@ -165,8 +168,11 @@ while len(deck) > 0:
         flag2 = False
     else:
         print("Turn of Player 1")
+        
         last = turn(Player = P1, card = pick())
+        
         print(lastcard(last))
+        
         if str(lastcard(last)) == "7":
             change = input("Enter the Player number whom you want to change with: ")
             me = input("Enter the card Index you want to change: ")
@@ -189,9 +195,13 @@ while len(deck) > 0:
                 P4 = nine(P4)
                 
     if str(lastcard(last)) == "Skip" or flag1:
+        
         print("Turn of Player 3")
+        
         last = turn(Player = P3, card = pick())
+        
         print(lastcard(last))
+        
         if str(lastcard(last)) == "7":
             change = input("Enter the Player number whom you want to change with: ")
             me = input("Enter the card Index you want to change: ")
@@ -212,12 +222,16 @@ while len(deck) > 0:
                 P2 = nine(P2)
             elif changePlayer == "4":
                 P4 = nine(P4)       
+        
         flag2 = True
         flag1 = False
     else:
         print("Turn of Player 2")
+        
         last = turn(Player = P2, card = pick())
+        
         print(lastcard(last))
+        
         if str(lastcard(last)) == "7":
             change = input("Enter the Player number whom you want to change with: ")
             me = input("Enter the card Index you want to change: ")
@@ -240,9 +254,13 @@ while len(deck) > 0:
                 P4 = nine(P4)
                 
     if str(lastcard(last)) == "Skip" or flag2:
+        
         print("Turn of Player 4")
+        
         last = turn(Player = P4, card = pick())
+        
         print(lastcard(last))
+        
         if str(lastcard(last)) == "7":
             change = input("Enter the Player number whom you want to change with: ")
             me = input("Enter the card Index you want to change: ")
@@ -263,12 +281,16 @@ while len(deck) > 0:
                 P2 = nine(P2)
             elif changePlayer == "3":
                 P3 = nine(P3)
+        
         flag2 = False
         flag1 = True
     else:
         print("Turn of Player 3")
+        
         last = turn(Player = P3, card = pick())
+        
         print(lastcard(last))
+        
         if str(lastcard(last)) == "7":
             change = input("Enter the Player number whom you want to change with: ")
             me = input("Enter the card Index you want to change: ")
@@ -291,9 +313,13 @@ while len(deck) > 0:
                 P4 = nine(P4)
                 
     if str(lastcard(last)) == "Skip" or flag1:
+        
         print("Turn of Player 1")
+        
         last = turn(Player = P1, card = pick())
+        
         print(lastcard(last))
+        
         if str(lastcard(last)) == "7":
             change = input("Enter the Player number whom you want to change with: ")
             me = input("Enter the card Index you want to change: ")
@@ -314,12 +340,17 @@ while len(deck) > 0:
                 P3 = nine(P3)
             elif changePlayer == "4":
                 P4 = nine(P4)
+        
         flag1 = False
         flag2 = True      
     else:
+        
         print("Turn of Player 4")
+        
         last = turn(Player = P4, card = pick())
+        
         print(lastcard(last))
+        
         if str(lastcard(last)) == "7":
             change = input("Enter the Player number whom you want to change with: ")
             me = input("Enter the card Index you want to change: ")
@@ -340,6 +371,7 @@ while len(deck) > 0:
                 P2= nine(P2)
             elif changePlayer == "3":
                 P3 = nine(P3)        
+    
     printall(P1, P2, P3, P4)
         
     break
