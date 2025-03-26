@@ -75,14 +75,19 @@ def printall(P1, P2, P3, P4):
     print(P3)
     print(P4)
 
-def draw4():
-    pass
+def draw4(p1, p2, p3, p4):
+    temp = p1
+    p1 = p2
+    p2 = p3
+    p3 = p4
+    p4 = temp
+    return p1, p2, p3, p4
 
 def reverse():
-    pass
+    return True
 
-def wild():
-    pass
+def wild(player):
+    print(player)
 
 def nine(player):
     print(player)
