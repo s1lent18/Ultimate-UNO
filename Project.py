@@ -58,15 +58,22 @@ def pick():
     card = random.randint(0, len(deck) - 1)
     return deck[card]
 
-def exchange(num, player, card) -> List[int]:
+def exchange(num, player, card):
+    old = player[num]
     revDeck.append(player[num])
     player[num] = card
-    return player
+    return player, old
 
 P1 = assignCards()
 P2 = assignCards()
 P3 = assignCards()
 P4 = assignCards()
+
+def printall(P1, P2, P3, P4):
+    print(P1)
+    print(P2)
+    print(P3)
+    print(P4)
 
 def draw4():
     pass
@@ -77,13 +84,27 @@ def reverse():
 def wild():
     pass
 
-def seven():
-    pass
+def nine(player):
+    print(player)
+    flag = int(input("Enter 0 to skip or 1 to continue: "))
+    print(player)
+    while flag:
+        print(player)
+        if flag == 0:
+            break
+        else:
+            num1 = int(input("Enter the card number you want to change: "))
+            num2 = int(input("Enter the card number you want to change with: "))
+            player[num1], player[num2] = player[num2], player[num1]
+            
+    return player
 
-#print(P1)
-#print(P2)
-#print(P3)
-#print(P4)
+def seven(player, exchange, myCard, theirCard):
+    player[myCard], exchange[theirCard] = exchange[theirCard], player[myCard]
+    print(player)
+    print(exchange)
+    
+    return player, exchange    
 
 def turn(Player, card):
     print(card)
@@ -91,7 +112,7 @@ def turn(Player, card):
     if choice == 0:
         revDeck.append(card)
     else:
-        Player = exchange(choice - 1, Player, card)
+        Player, card = exchange(choice - 1, Player, card)
         print(Player)
     return card
         
@@ -108,32 +129,212 @@ flag1 = False
 flag2 = False
 
 while len(deck) > 0:
-    
-    if lastcard(last) == "Skip":      
+    printall(P1, P2, P3, P4)
+    if str(lastcard(last)) == "Skip" or flag2:
+        print("Turn of Player 2")      
         last = turn(Player = P2, card = pick())
-        flag1 = True
-    else:
-        last = turn(Player = P1, card = pick())
         
-    if lastcard(last) == "Skip" or flag1:
+        print(lastcard(last))
+        
+        if str(lastcard(last)) == "7":
+            change = input("Enter the Player number whom you want to change with: ")
+            me = input("Enter the card Index you want to change: ")
+            card = input("Enter the card Index you want to change with: ")
+            
+            if change == "1":
+                P2, P1 = seven(P2, P1, int(me), int(card))
+            elif change == "3":
+                P2, P3 = seven(P2, P3, int(me), int(card))
+            elif change == "4":
+                P2, P4 = seven(P2, P4, int(me), int(card))
+        elif str(lastcard(last)) == "9":
+            changePlayer = str(input("Enter the number of the player you want to see and shuffle the card of: "))
+            if changePlayer == "1":
+                P1 = nine(P1)
+            elif changePlayer == "3":
+                P3 = nine(P3)
+            elif changePlayer == "4":
+                P4 = nine(P4)       
+                
+        flag1 = True
+        flag2 = False
+    else:
+        print("Turn of Player 1")
+        last = turn(Player = P1, card = pick())
+        print(lastcard(last))
+        if str(lastcard(last)) == "7":
+            change = input("Enter the Player number whom you want to change with: ")
+            me = input("Enter the card Index you want to change: ")
+            card = input("Enter the card Index you want to change with: ")
+            
+            if change == "2":
+                P1, P2 = seven(P1, P2, int(me), int(card))
+            elif change == "3":
+                P1, P3 = seven(P1, P3, int(me), int(card))
+            elif change == "4":
+                P1, P4 = seven(P1, P4, int(me), int(card))
+                
+        elif str(lastcard(last)) == "9":
+            changePlayer = str(input("Enter the number of the player you want to see and shuffle the card of: "))
+            if changePlayer == "2":
+                P2 = nine(P2)
+            elif changePlayer == "3":
+                P3 = nine(P3)
+            elif changePlayer == "4":
+                P4 = nine(P4)
+                
+    if str(lastcard(last)) == "Skip" or flag1:
+        print("Turn of Player 3")
         last = turn(Player = P3, card = pick())
+        print(lastcard(last))
+        if str(lastcard(last)) == "7":
+            change = input("Enter the Player number whom you want to change with: ")
+            me = input("Enter the card Index you want to change: ")
+            card = input("Enter the card Index you want to change with: ")
+            
+            if change == "1":
+                P3, P1 = seven(P3, P1, int(me), int(card))
+            elif change == "2":
+                P3, P2 = seven(P3, P2, int(me), int(card))
+            elif change == "4":
+                P3, P4 = seven(P3, P4, int(me), int(card))
+                
+        elif str(lastcard(last)) == "9":
+            changePlayer = str(input("Enter the number of the player you want to see and shuffle the card of: "))
+            if changePlayer == "1":
+                P1 = nine(P1)
+            elif changePlayer == "2":
+                P2 = nine(P2)
+            elif changePlayer == "4":
+                P4 = nine(P4)       
         flag2 = True
         flag1 = False
     else:
+        print("Turn of Player 2")
         last = turn(Player = P2, card = pick())
+        print(lastcard(last))
+        if str(lastcard(last)) == "7":
+            change = input("Enter the Player number whom you want to change with: ")
+            me = input("Enter the card Index you want to change: ")
+            card = input("Enter the card Index you want to change with: ")
+            
+            if change == "1":
+                P2, P1 = seven(P2, P1, int(me), int(card))
+            elif change == "3":
+                P2, P3 = seven(P2, P3, int(me), int(card))
+            elif change == "4":
+                P2, P4 = seven(P2, P4, int(me), int(card))
         
-    if lastcard(last) == "Skip":
+        elif str(lastcard(last)) == "9":
+            changePlayer = str(input("Enter the number of the player you want to see and shuffle the card of: "))
+            if changePlayer == "1":
+                P1 = nine(P1)
+            elif changePlayer == "3":
+                P3 = nine(P3)
+            elif changePlayer == "4":
+                P4 = nine(P4)
+                
+    if str(lastcard(last)) == "Skip" or flag2:
+        print("Turn of Player 4")
         last = turn(Player = P4, card = pick())
-    else:
-        last = turn(Player = P3, card = pick())
+        print(lastcard(last))
+        if str(lastcard(last)) == "7":
+            change = input("Enter the Player number whom you want to change with: ")
+            me = input("Enter the card Index you want to change: ")
+            card = input("Enter the card Index you want to change with: ")
+            
+            if change == "1":
+                P4, P1 = seven(P4, P1, int(me), int(card))
+            elif change == "2":
+                P4, P2 = seven(P4, P2, int(me), int(card))
+            elif change == "3":
+                P4, P3 = seven(P4, P3, int(me), int(card))
         
-    if lastcard(last) == "Skip":
-        last = turn(Player = P2, card = pick())      
+        elif str(lastcard(last)) == "9":
+            changePlayer = str(input("Enter the number of the player you want to see and shuffle the card of: "))
+            if changePlayer == "1":
+                P1 = nine(P1)
+            elif changePlayer == "2":
+                P2 = nine(P2)
+            elif changePlayer == "3":
+                P3 = nine(P3)
+        flag2 = False
+        flag1 = True
     else:
-        last = turn(Player = P4, card = pick())  
-    
-    #last = turn(Player = P1, card = pick())
-    #last = turn(Player = P2, card = pick())
-    #last = turn(Player = P3, card = pick())
-    #last = turn(Player = P4, card = pick())  
+        print("Turn of Player 3")
+        last = turn(Player = P3, card = pick())
+        print(lastcard(last))
+        if str(lastcard(last)) == "7":
+            change = input("Enter the Player number whom you want to change with: ")
+            me = input("Enter the card Index you want to change: ")
+            card = input("Enter the card Index you want to change with: ")
+            
+            if change == "1":
+                P3, P1 = seven(P3, P1, int(me), int(card))
+            elif change == "2":
+                P3, P2 = seven(P3, P2, int(me), int(card))
+            elif change == "4":
+                P3, P4 = seven(P3, P4, int(me), int(card))
+                
+        elif str(lastcard(last)) == "9":
+            changePlayer = str(input("Enter the number of the player you want to see and shuffle the card of: "))
+            if changePlayer == "1":
+                P1 = nine(P1)
+            elif changePlayer == "2":
+                P2 = nine(P2)
+            elif changePlayer == "4":
+                P4 = nine(P4)
+                
+    if str(lastcard(last)) == "Skip" or flag1:
+        print("Turn of Player 1")
+        last = turn(Player = P1, card = pick())
+        print(lastcard(last))
+        if str(lastcard(last)) == "7":
+            change = input("Enter the Player number whom you want to change with: ")
+            me = input("Enter the card Index you want to change: ")
+            card = input("Enter the card Index you want to change with: ")
+            
+            if change == "2":
+                P1, P2 = seven(P1, P2, int(me), int(card))
+            elif change == "3":
+                P1, P3 = seven(P1, P3, int(me), int(card))
+            elif change == "4":
+                P1, P4 = seven(P1, P4, int(me), int(card))
+                
+        elif str(lastcard(last)) == "9":
+            changePlayer = str(input("Enter the number of the player you want to see and shuffle the card of: "))
+            if changePlayer == "2":
+                P2 = nine(P2)
+            elif changePlayer == "3":
+                P3 = nine(P3)
+            elif changePlayer == "4":
+                P4 = nine(P4)
+        flag1 = False
+        flag2 = True      
+    else:
+        print("Turn of Player 4")
+        last = turn(Player = P4, card = pick())
+        print(lastcard(last))
+        if str(lastcard(last)) == "7":
+            change = input("Enter the Player number whom you want to change with: ")
+            me = input("Enter the card Index you want to change: ")
+            card = input("Enter the card Index you want to change with: ")
+            
+            if change == "1":
+                P4, P1 = seven(P4, P1, int(me), int(card))
+            elif change == "2":
+                P4, P2 = seven(P4, P2, int(me), int(card))
+            elif change == "3":
+                P4, P3 = seven(P4, P3, int(me), int(card))
+                
+        elif str(lastcard(last)) == "9":
+            changePlayer = str(input("Enter the number of the player you want to see and shuffle the card of: "))
+            if changePlayer == "1":
+                P1 = nine(P1)
+            elif changePlayer == "2":
+                P2= nine(P2)
+            elif changePlayer == "3":
+                P3 = nine(P3)        
+    printall(P1, P2, P3, P4)
+        
     break
