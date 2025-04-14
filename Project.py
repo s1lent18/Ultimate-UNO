@@ -2,18 +2,18 @@ import random
 from typing import List
 
 cards = [
-    "R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "RRev", "RSkip",
-    "G0", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "GRev", "GSkip",
-    "B0", "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "BRev", "BSkip",
-    "Y0", "Y1", "Y2", "Y3", "Y4", "Y5", "Y6", "Y7", "Y8", "Y9", "YRev", "YSkip",
+    "R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "RRev", "RRev", "RSkip", "RSkip", "R+2", "R+2"
+    "G0", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "GRev", "GRev", "GSkip", "GSkip", "G+2", "G+2",
+    "B0", "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "BRev", "BRev", "BSkip", "BSkip", "B+2", "B+2",
+    "Y0", "Y1", "Y2", "Y3", "Y4", "Y5", "Y6", "Y7", "Y8", "Y9", "YRev", "YRev", "YSkip", "YSkip", "Y+2", "Y+2",
     "W+4", "W+4", "WJ", "WJ"
 ]
 
 deck = [
-    "R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "RRev", "RSkip",
-    "G0", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "GRev", "GSkip",
-    "B0", "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "BRev", "BSkip",
-    "Y0", "Y1", "Y2", "Y3", "Y4", "Y5", "Y6", "Y7", "Y8", "Y9", "YRev", "YSkip",
+    "R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "RRev", "RRev", "RSkip", "RSkip", "R+2", "R+2"
+    "G0", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "GRev", "GRev", "GSkip", "GSkip", "G+2", "G+2",
+    "B0", "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "BRev", "BRev", "BSkip", "BSkip", "B+2", "B+2",
+    "Y0", "Y1", "Y2", "Y3", "Y4", "Y5", "Y6", "Y7", "Y8", "Y9", "YRev", "YRev", "YSkip", "YSkip", "Y+2", "Y+2",
     "W+4", "W+4", "WJ", "WJ"
 ]
 
@@ -28,16 +28,18 @@ weights = {
     "7": 7,
     "8": 8,
     "9": 9,
+    "+2": 18,
     "Rev": 20,
     "Skip": 20,
     "+4": 15,
     "J": 10
 }
 
+# Draw 4 acts as a turnable
 # Skip Lets you skip your turn
-# Draw 4 lets you see your cards 
+# Wild Card Lets you see your own cards
 # Reverse Lets you Reverse any power-up applied on you
-# Wild Card Lets you See the and Shuffle any opponent's cards
+# 9 of any color Lets you See the and Shuffle any opponent's cards
 # 7 of any color Lets you swap your one card with any card of any opponent
 
 P1 = []
