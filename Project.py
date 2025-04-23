@@ -1,86 +1,21 @@
+# Draw 4 acts as a turnable
+# Skip Lets you skip your turn
+# Wild Card Lets you see your own cards
+# 9 of any color Lets you See the and Shuffle any opponent's cards
+# 7 of any color Lets you swap your one card with any card of any opponent
+
 import random
-from typing import List
-
-class TreeNode:
-    def __init__(self, value=None, player=None):
-        self.player = player
-        self.value = value
-        self.children = []
-        
-def build(values):
-    idx = 0
-    root = TreeNode()
-    
-    for _ in range(2):
-        childLvl1 = TreeNode()
-        root.children.append(childLvl1)
-        
-        for _ in range(2):
-            if idx == 0:
-                leaf = TreeNode(values[idx], 1)
-            elif idx == 1:
-                leaf = TreeNode(values[idx], 2)
-            elif idx == 2:
-                leaf = TreeNode(values[idx], 3)
-            elif idx == 3:
-                leaf = TreeNode(values[idx], 4)
-            idx += 1
-            childLvl1.children.append(leaf)
-                
-                
-    return root
-    
-def abp(node, depth, alpha, beta, maxPlayer):
-    if not node.children:
-        return node.value, node.player
-
-    if maxPlayer:
-        maxEval = float('-inf')
-        chosenPlayer = None
-        for child in node.children:
-            evalVal, evalPlayer = abp(child, depth + 1, alpha, beta, False)
-            if evalVal > maxEval:
-                maxEval = evalVal
-                chosenPlayer = evalPlayer
-            alpha = max(alpha, evalVal)
-            if beta <= alpha:
-                print("Pruned at max level")
-                break
-        return maxEval, chosenPlayer
-    else:
-        minEval = float('inf')
-        chosenPlayer = None
-        for child in node.children:
-            evalVal, eval_player = abp(child, depth + 1, alpha, beta, True)
-            if evalVal < minEval:
-                minEval = evalVal
-                chosenPlayer = eval_player
-            beta = min(beta, evalVal)
-            if beta <= alpha:
-                print("Pruned at min level")
-                break
-        return minEval, chosenPlayer
-    
-#tree_root = build(user_input)
-#optimal_value = abp(tree_root, 0, float('-inf'), float('inf'), True)
-#print(f"Optimal value after Alpha-Beta Pruning: {optimal_value}")
-        
+from typing import List    
 
 cards = [
     "R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "RRev", "RRev", "RSkip", "RSkip", "R+2", "R+2",
     "G0", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "GRev", "GRev", "GSkip", "GSkip", "G+2", "G+2",
     "B0", "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "BRev", "BRev", "BSkip", "BSkip", "B+2", "B+2",
     "Y0", "Y1", "Y2", "Y3", "Y4", "Y5", "Y6", "Y7", "Y8", "Y9", "YRev", "YRev", "YSkip", "YSkip", "Y+2", "Y+2",
-    "W+4", "W+4", "WJ", "WJ"
+    "W+4", "W+4", "WC", "WC"
 ]
 
-deck = [
-    "R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "RRev", "RRev", "RSkip", "RSkip", "R+2", "R+2",
-    "G0", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "GRev", "GRev", "GSkip", "GSkip", "G+2", "G+2",
-    "B0", "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "BRev", "BRev", "BSkip", "BSkip", "B+2", "B+2",
-    "Y0", "Y1", "Y2", "Y3", "Y4", "Y5", "Y6", "Y7", "Y8", "Y9", "YRev", "YRev", "YSkip", "YSkip", "Y+2", "Y+2",
-    "W+4", "W+4", "WJ", "WJ"
-]
+deck = cards.copy()
 
 weights = {
     "0": 0,
@@ -93,385 +28,332 @@ weights = {
     "7": 7,
     "8": 8,
     "9": 9,
+    "C": 10,
+    "+4": 15,
     "+2": 18,
     "Rev": 20,
     "Skip": 20,
-    "+4": 15,
-    "J": 10
 }
 
-# Draw 4 acts as a turnable
-# Skip Lets you skip your turn
-# Wild Card Lets you see your own cards
-# Reverse Lets you Reverse any power-up applied on you
-# 9 of any color Lets you See the and Shuffle any opponent's cards
-# 7 of any color Lets you swap your one card with any card of any opponent
-
-P1 = []
-P2 = []
-P3 = []
-P4 = []
 revDeck = []
 
-def assignCards() -> List[int]:
-    arr = []
-    for i in range(3):
-        card = random.randint(0, len(deck) - 1)
-        arr.append(deck[card])
-        deck.remove(deck[card])
-    return arr
+def cardVal(card):
+    return card[1:len(card)]
 
 def pick():
     card = random.randint(0, len(deck) - 1)
     return deck[card]
 
-def exchange(num, player, card):
-    old = player[num]
-    revDeck.append(player[num])
-    player[num] = card
-    return player, old
-
-P1 = assignCards()
-P2 = assignCards()
-P3 = assignCards()
-P4 = assignCards()
-
-def printall(P1, P2, P3, P4):
-    print(P1)
-    print(P2)
-    print(P3)
-    print(P4)
-
-def draw4(p1, p2, p3, p4):
-    temp = p1
-    p1 = p2
-    p2 = p3
-    p3 = p4
-    p4 = temp
-    return p1, p2, p3, p4
-
-def reverse():
-    return True
-
-def wild(player):
-    print(player)
-
-def nine(player):
-    print(player)
-    while flag:
-        flag = int(input("Enter 0 to skip or 1 to continue: "))
-        print(player)
-        if flag == 0:
-            break
-        else:
-            num1 = int(input("Enter the card number you want to change: "))
-            num2 = int(input("Enter the card number you want to change with: "))
-            player[num1], player[num2] = player[num2], player[num1]
-            
-    return player
-
-def seven(player, exchange, myCard, theirCard):
-    player[myCard], exchange[theirCard] = exchange[theirCard], player[myCard]
-    print(player)
-    print(exchange)
-    
-    return player, exchange    
-
-def turn(Player, card):
-    print(card)
-    choice = int(input("Enter either 1, 2, or 3 to exchange the card or 0 to skip: "))
-    if choice == 0:
-        revDeck.append(card)
-    else:
-        Player, card = exchange(choice - 1, Player, card)
-        print(Player)
-    return card
+class AI:
+    def __init__(self):
+        self.hand = self.assignCards()
+        self.memory = self.hand.copy()
+        self.numTurns = 0
+        self.shuffled = False
+        self.playerCards = []
+        self.other1Cards = []
+        self.other2Cards = []
+        self.rememberOtherCards = [False, False, False]
         
-def cost(card):
-    temp = lastcard(card)
-    retCost = weights[temp]
-    return retCost
+    def add(self, p, a1, a2):
+        self.playerCards = p
+        self.other1Cards = a1
+        self.other2Cards = a2
+        
+    def assignCards(self) -> List[int]:
+        arr = []
+        for i in range(3):
+            card = random.randint(0, len(deck) - 1)
+            arr.append(deck[card])
+            deck.remove(deck[card])
+        return arr
     
+    def calculateHeuristic(self):
+        idx = max(range(len(self.hand)), key=lambda i: weights[self.hand[i][1:]])
+        return idx     
+            
+class Player:
+    def __init__(self):
+        self.hand = self.assignCards()
+        
+    def assignCards(self) -> List[int]:
+        arr = []
+        for i in range(3):
+            card = random.randint(0, len(deck) - 1)
+            arr.append(deck[card])
+            deck.remove(deck[card])
+        return arr
+    
+    def calculateHeuristic(self):
+        idx = max(range(len(self.hand)), key=lambda i: weights[self.hand[i][1:]])
+        return idx 
+    
+    def seven(self, bot: AI):
+        
+        myCard = int(input("Enter your card index you want to exchange"))
+        
+        theirCard = int(input("Enter the card of AI you want"))
+        
+        self.hand[myCard], bot.hand[theirCard] = bot.hand[theirCard], self.hand[myCard]
+        
+        return player, bot    
+    
+    def draw4(self, p2, p3, p4):
+        temp = p1
+        p1 = p2
+        p2 = p3
+        p3 = p4
+        p4 = temp
+        return p1, p2, p3, p4
 
-def lastcard(card):
-    return card[1:len(card)]
+    def nine(self, player):
+        print(player)
+        flag = 1
+        while flag:
+            flag = int(input("Enter 0 to skip or 1 to continue: "))
+            if flag == 0:
+                break
+            else:
+                num1 = int(input("Enter the card number you want to change: "))
+                num2 = int(input("Enter the card number you want to change with: "))
+                player[num1], player[num2] = player[num2], player[num1]
+                
+            print(player)
+            
+        return player
+    
+    def wild(self):
+        print(self.hand)
+    
+    def playHuman(self, cardDrawn, bot1: AI, bot2: AI, bot3: AI):
+        
+        print(f"Card Drawn: {cardDrawn}")
+        
+        choice = int(input("Enter the card Number [1, 2, 3] to exchange with the card drawn or enter 0 to skip\n"))
+        
+        if choice != 0:
+            
+            card = self.hand[choice - 1]
+            
+            self.hand.remove(card)
+            self.hand.append(cardDrawn)
+            
+            cardDrawn = card
+            
+        if str(cardVal(cardDrawn)) == "7":
+            
+            botChoice = int(input("Enter the AI Bot Number [1, 2, 3] to want to exchange with"))
+            
+            if botChoice == 1:
+                self.seven(bot=bot1)
+            elif botChoice == 2:
+                self.seven(bot=bot2)
+            elif botChoice == 3:
+                self.seven(bot=bot3)
+                
+        elif str(cardVal(cardDrawn)) == "9":
+            botChoice = int(input("Enter the AI Bot Number [1, 2, 3] to want to see & shuffle their cards"))
+            
+            if botChoice == 1:
+                bot1.shuffled = True
+                self.nine(player=bot1)
+            elif botChoice == 2:
+                bot2.shuffled = True
+                self.nine(player=bot2)
+            elif botChoice == 3:
+                bot3.shuffled = True
+                self.nine(player=bot3)
 
+        elif str(cardVal(cardDrawn)) == "C":
+            self.wild()
 
-last = ""
+        elif str(cardVal(cardDrawn)) == "+4":
+            self.hand, ai1.hand, ai2.hand, ai3.hand = self.draw4(p2 = ai1.hand, p3 = ai2.hand, p4 = ai3.hand)
 
-flag1 = False
-flag2 = False
+def cost(card):
+        temp = cardVal(card)
+        retCost = weights[temp]
+        return retCost      
+    
+def playBot(me: AI, player: Player, bot1: AI, bot2: AI, cardDrawn):
+    
+    if me.shuffled:
+        remembers = random.random() < 0.5
+    else:
+        print(f"Number of Turns played by Now: {me.numTurns}")
+        remembers = random.random() < (0.98 - (me.numTurns * 0.05))
+        
+    idx = me.calculateHeuristic()
+    
+    if cost(me.hand[idx]) > cost(cardDrawn):
+    
+        print(f"Hueristic Index: {idx}")
+            
+        memory = me.memory.copy() if remembers else random.sample(me.hand, len(me.hand))
+        
+        print(f"Memory: {memory}")
+        
+        card = me.hand[idx]
+        
+        print(f"Card: {card}")
+    
+        me.hand.remove(card)
+        me.hand.append(cardDrawn)
+        cardDrawn = card
+        
+    if str(cardVal(cardDrawn)) == "7":
+        choice = random.randint(1, 3)
+        
+        if choice == 1:
+            cIdx = player.calculateHeuristic()
+        elif choice == 2:
+            cIdx = bot1.calculateHeuristic()
+        elif choice == 3:
+            cIdx = bot2.calculateHeuristic()
+        
+        sevenBot(bot=me, player=choice, changeIdx=cIdx)
+        
+    elif str(cardVal(cardDrawn)) == "9":
+        choice = random.randint(1, 3)
+        nineBot(bot = me, player = choice)
+        
+    elif str(cardVal(cardDrawn)) == "C":
+        wildBot(bot = me)
+    
+    me.numTurns += 1
+    
+def sevenBot(bot: AI, player, changeIdx):  
+    
+    print("Bot Called 7")
+    
+    remember = random.random() < 0.6
+    
+    idx = bot.calculateHeuristic()
+    
+    memory = []
+    
+    if player == 1:
+            if bot.rememberOtherCards[0]:
+                memory = bot.playerCards.copy() if remember else random.sample(bot.playerCards, len(bot.playerCards))
+                
+            else:
+                memory = bot.playerCards.copy()
+                changeIdx = random.randint(0, 3)
+                
+    elif player == 2:
+        if bot.rememberOtherCards[1]:
+            memory = bot.other1Cards.copy() if remember else random.sample(bot.other1Cards, len(bot.other1Cards))
+            
+        else:
+            memory = bot.other1Cards.copy()
+            changeIdx = random.randint(0, 3)
+            
+    elif player == 3:
+        if bot.rememberOtherCards[2]:
+            memory = bot.other2Cards.copy() if remember else random.sample(bot.other2Cards, len(bot.other2Cards))
+            
+        else:
+            memory = bot.other2Cards.copy()
+            changeIdx = random.randint(0, 3)       
+        
+    myCard = bot.hand[idx]
+    theirCard = memory[changeIdx]
+    
+    bot.hand.remove(myCard)
+    bot.hand.append(theirCard)
+    
+    memory.remove(theirCard)
+    memory.append(myCard)
+    
+    if player == 1:
+        bot.playerCards = memory
+    elif player == 2:
+        bot.other1Cards = memory
+    elif player == 3:
+        bot.other2Cards = memory
+    
+    return memory            
+        
+def nineBot(bot: AI, player):
+    
+    print("Bot Called 9")
+    
+    memory = []
+    
+    if player == 1:
+        bot.rememberOtherCards[0] = True
+        memory = bot.playerCards.copy()
+    elif player == 2:
+        bot.rememberOtherCards[1] = True
+        memory = bot.other1Cards.copy()
+    elif player == 3:
+        bot.rememberOtherCards[2] = True
+        memory = bot.other2Cards.copy()
+    
+    random.shuffle(memory)
+    
+    if player == 1:
+        bot.playerCards = memory
+    elif player == 2:
+        bot.other1Cards = memory
+    elif player == 3:
+        bot.other2Cards = memory
+            
+    return memory 
+
+def wildBot(bot: AI):
+    bot.numTurns = 0
+    bot.memory = bot.hand.copy()
+
+player = Player()
+ai1 = AI()
+ai2 = AI()
+ai3 = AI()
+
+ai1.add(p = player.hand, a1 = ai2.hand, a2 = ai3.hand)
+ai2.add(p = player.hand, a1 = ai1.hand, a2 = ai3.hand)
+ai3.add(p = player.hand, a1 = ai1.hand, a2 = ai2.hand)
+
+lastTurn = 1
+
+print(f"Player - 1 Cards: {player.hand}")
+print(f"Player - 2 Cards: {ai1.hand}")
+print(f"Player - 3 Cards: {ai2.hand}")
+print(f"Player - 4 Cards: {ai3.hand}")
 
 while len(deck) > 0:
-    printall(P1, P2, P3, P4)
-    if str(lastcard(last)) == "Skip" or flag2:
-        
-        print("Turn of Player 2")      
-        
-        last = turn(Player = P2, card = pick())
-        
-        #print(lastcard(last))
-        
-        if str(lastcard(last)) == "7":
-            change = input("Enter the Player number whom you want to change with: ")
-            me = input("Enter the card Index you want to change: ")
-            card = input("Enter the card Index you want to change with: ")
-            
-            if change == "1":
-                P2, P1 = seven(P2, P1, int(me), int(card))
-            elif change == "3":
-                P2, P3 = seven(P2, P3, int(me), int(card))
-            elif change == "4":
-                P2, P4 = seven(P2, P4, int(me), int(card))
-                
-        elif str(lastcard(last)) == "9":
-            changePlayer = str(input("Enter the number of the player you want to see and shuffle the card of: "))
-            if changePlayer == "1":
-                P1 = nine(P1)
-            elif changePlayer == "3":
-                P3 = nine(P3)
-            elif changePlayer == "4":
-                P4 = nine(P4)       
-                
-        flag1 = True
-        flag2 = False
-    else:
-        print("Turn of Player 1")
-        
-        last = turn(Player = P1, card = pick())
-        
-        ##print(lastcard(last))
-        
-        if str(lastcard(last)) == "7":
-            change = input("Enter the Player number whom you want to change with: ")
-            me = input("Enter the card Index you want to change: ")
-            card = input("Enter the card Index you want to change with: ")
-            
-            if change == "2":
-                P1, P2 = seven(P1, P2, int(me), int(card))
-            elif change == "3":
-                P1, P3 = seven(P1, P3, int(me), int(card))
-            elif change == "4":
-                P1, P4 = seven(P1, P4, int(me), int(card))
-                
-        elif str(lastcard(last)) == "9":
-            changePlayer = str(input("Enter the number of the player you want to see and shuffle the card of: "))
-            if changePlayer == "2":
-                P2 = nine(P2)
-            elif changePlayer == "3":
-                P3 = nine(P3)
-            elif changePlayer == "4":
-                P4 = nine(P4)
-                
-    if str(lastcard(last)) == "Skip" or flag1:
-        
-        print("Turn of Player 3")
-        
-        last = turn(Player = P3, card = pick())
-        
-        #print(lastcard(last))
-        
-        if str(lastcard(last)) == "7":
-            change = input("Enter the Player number whom you want to change with: ")
-            me = input("Enter the card Index you want to change: ")
-            card = input("Enter the card Index you want to change with: ")
-            
-            if change == "1":
-                P3, P1 = seven(P3, P1, int(me), int(card))
-            elif change == "2":
-                P3, P2 = seven(P3, P2, int(me), int(card))
-            elif change == "4":
-                P3, P4 = seven(P3, P4, int(me), int(card))
-                
-        elif str(lastcard(last)) == "9":
-            changePlayer = str(input("Enter the number of the player you want to see and shuffle the card of: "))
-            if changePlayer == "1":
-                P1 = nine(P1)
-            elif changePlayer == "2":
-                P2 = nine(P2)
-            elif changePlayer == "4":
-                P4 = nine(P4)       
-        
-        flag2 = True
-        flag1 = False
-    else:
-        print("Turn of Player 2")
-        
-        last = turn(Player = P2, card = pick())
-        
-        #print(lastcard(last))
-        
-        if str(lastcard(last)) == "7":
-            change = input("Enter the Player number whom you want to change with: ")
-            me = input("Enter the card Index you want to change: ")
-            card = input("Enter the card Index you want to change with: ")
-            
-            if change == "1":
-                P2, P1 = seven(P2, P1, int(me), int(card))
-            elif change == "3":
-                P2, P3 = seven(P2, P3, int(me), int(card))
-            elif change == "4":
-                P2, P4 = seven(P2, P4, int(me), int(card))
-        
-        elif str(lastcard(last)) == "9":
-            changePlayer = str(input("Enter the number of the player you want to see and shuffle the card of: "))
-            if changePlayer == "1":
-                P1 = nine(P1)
-            elif changePlayer == "3":
-                P3 = nine(P3)
-            elif changePlayer == "4":
-                P4 = nine(P4)
-                
-    if str(lastcard(last)) == "Skip" or flag2:
-        
-        print("Turn of Player 4")
-        
-        last = turn(Player = P4, card = pick())
-        
-        #print(lastcard(last))
-        
-        if str(lastcard(last)) == "7":
-            change = input("Enter the Player number whom you want to change with: ")
-            me = input("Enter the card Index you want to change: ")
-            card = input("Enter the card Index you want to change with: ")
-            
-            if change == "1":
-                P4, P1 = seven(P4, P1, int(me), int(card))
-            elif change == "2":
-                P4, P2 = seven(P4, P2, int(me), int(card))
-            elif change == "3":
-                P4, P3 = seven(P4, P3, int(me), int(card))
-        
-        elif str(lastcard(last)) == "9":
-            changePlayer = str(input("Enter the number of the player you want to see and shuffle the card of: "))
-            if changePlayer == "1":
-                P1 = nine(P1)
-            elif changePlayer == "2":
-                P2 = nine(P2)
-            elif changePlayer == "3":
-                P3 = nine(P3)
-        
-        flag2 = False
-        flag1 = True
-    else:
-        print("Turn of Player 3")
-        
-        last = turn(Player = P3, card = pick())
-        
-        #print(lastcard(last))
-        
-        if str(lastcard(last)) == "7":
-            change = input("Enter the Player number whom you want to change with: ")
-            me = input("Enter the card Index you want to change: ")
-            card = input("Enter the card Index you want to change with: ")
-            
-            if change == "1":
-                P3, P1 = seven(P3, P1, int(me), int(card))
-            elif change == "2":
-                P3, P2 = seven(P3, P2, int(me), int(card))
-            elif change == "4":
-                P3, P4 = seven(P3, P4, int(me), int(card))
-                
-        elif str(lastcard(last)) == "9":
-            changePlayer = str(input("Enter the number of the player you want to see and shuffle the card of: "))
-            if changePlayer == "1":
-                P1 = nine(P1)
-            elif changePlayer == "2":
-                P2 = nine(P2)
-            elif changePlayer == "4":
-                P4 = nine(P4)
-                
-    if str(lastcard(last)) == "Skip" or flag1:
-        
-        print("Turn of Player 1")
-        
-        last = turn(Player = P1, card = pick())
-        
-        #print(lastcard(last))
-        
-        if str(lastcard(last)) == "7":
-            change = input("Enter the Player number whom you want to change with: ")
-            me = input("Enter the card Index you want to change: ")
-            card = input("Enter the card Index you want to change with: ")
-            
-            if change == "2":
-                P1, P2 = seven(P1, P2, int(me), int(card))
-            elif change == "3":
-                P1, P3 = seven(P1, P3, int(me), int(card))
-            elif change == "4":
-                P1, P4 = seven(P1, P4, int(me), int(card))
-                
-        elif str(lastcard(last)) == "9":
-            changePlayer = str(input("Enter the number of the player you want to see and shuffle the card of: "))
-            if changePlayer == "2":
-                P2 = nine(P2)
-            elif changePlayer == "3":
-                P3 = nine(P3)
-            elif changePlayer == "4":
-                P4 = nine(P4)
-        
-        flag1 = False
-        flag2 = True      
-    else:
-        
-        print("Turn of Player 4")
-        
-        last = turn(Player = P4, card = pick())
-        
-        #print(lastcard(last))
-        
-        if str(lastcard(last)) == "7":
-            change = input("Enter the Player number whom you want to change with: ")
-            me = input("Enter the card Index you want to change: ")
-            card = input("Enter the card Index you want to change with: ")
-            
-            if change == "1":
-                P4, P1 = seven(P4, P1, int(me), int(card))
-            elif change == "2":
-                P4, P2 = seven(P4, P2, int(me), int(card))
-            elif change == "3":
-                P4, P3 = seven(P4, P3, int(me), int(card))
-                
-        elif str(lastcard(last)) == "9":
-            changePlayer = str(input("Enter the number of the player you want to see and shuffle the card of: "))
-            if changePlayer == "1":
-                P1 = nine(P1)
-            elif changePlayer == "2":
-                P2= nine(P2)
-            elif changePlayer == "3":
-                P3 = nine(P3)        
     
-    printall(P1, P2, P3, P4)
+    last = pick()
+    
+    deck.remove(last)
+    
+    print(f"Card Drawn: {last}")
+    
+    if str(cardVal(last)) == "Skip":
         
-    break
-
-final = []
-temp = 0
-
-for card in P1:
-    temp += cost(card)
-
-final.append(temp)
-temp = 0
+        lastTurn = (lastTurn + 1) % 4
+        
+    print(f"Turn Off: {lastTurn}")
+        
+    if lastTurn == 1:
+        print("Player - 1 Turn:")
+        
+        player.playHuman(bot1 = ai1, bot2 = ai2, bot3 = ai3, cardDrawn = last)
+        
+    if lastTurn == 2:
+        playBot(me = ai1, player = player, bot1 = ai2, bot2 = ai3, cardDrawn = last)    
+        
+    if lastTurn == 3:
+        playBot(me = ai2, player = player, bot1 = ai1, bot2 = ai3, cardDrawn = last) 
     
-for card in P2:
-    temp += cost(card)
-
-final.append(temp)
-temp = 0
-    
-for card in P3:
-    temp += cost(card)
-
-final.append(temp)
-temp = 0
-    
-for card in P4:
-    temp += cost(card)
-
-final.append(temp)
-temp = 0
-    
-treeRoot = build(final)
-optimalValue, responsiblePlayer = abp(treeRoot, 0, float('-inf'), float('inf'), False)
-print(f"\nOptimal value after Alpha-Beta Pruning: {optimalValue} (Player {responsiblePlayer})")
+    if lastTurn == 4:
+        playBot(me = ai3, player = player, bot1 = ai1, bot2 = ai2, cardDrawn = last)
+        
+    lastTurn += 1
+    if lastTurn > 4:
+        lastTurn = 1
+        
+    print(f"Player - 1 Cards: {player.hand}")
+    print(f"Player - 2 Cards: {ai1.hand}")
+    print(f"Player - 3 Cards: {ai2.hand}")
+    print(f"Player - 4 Cards: {ai3.hand}")
