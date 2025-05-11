@@ -2,10 +2,11 @@
 # 9 of any color Lets you See the and Shuffle any opponent's cards
 # 7 of any color Lets you swap your one card with any card of any opponent
 
+import numpy
 import random
 import time
 from typing import List  
-from pgmpy.models import BayesianNetwork
+from pgmpy.models import DiscreteBayesianNetwork
 from pgmpy.inference import VariableElimination
 from pgmpy.factors.discrete import TabularCPD  
 
@@ -36,6 +37,10 @@ weights = {
     "Skip": 20,
 }
 
+def createDeck():
+    random.shuffle(deck)
+    return deck
+
 revDeck = []
 
 def cardVal(card):
@@ -48,7 +53,7 @@ def pick():
 class BayesianAI:
     def __init__(self, allCards):
         self.allCards = allCards
-        self.model = BayesianNetwork()
+        self.model = DiscreteBayesianNetwork()
         self.inference = None
         self.setupModel()
         
@@ -57,53 +62,45 @@ class BayesianAI:
         
         for slot in slots:
             self.model.add_node(slot)
-            
+        
         for slot in slots:
             cpd = TabularCPD(
-                variable = slot,
-                variable_card = len(self.allCards),
-                values = [[1 / len(self.allCards)] * len(self.allCards)],
-                state_names = {slot: self.allCards}
+                variable=slot,
+                variable_card=len(self.allCards),
+                values=[[1 / len(self.allCards)] for _ in self.allCards]
+                # ⛔ DON'T pass state_names here!
             )
             self.model.add_cpds(cpd)
-            
+        
         self.inference = VariableElimination(self.model)
         
     def updateOnObservation(self, slot, card):
         values = []
         for c in self.allCards:
-            if c == card:
-                values.append(0.99)
-                
-            else:
-                values.appned(0.01 / (len(self.allCards) - 1))
-                
+            values.append(0.99 if c == card else 0.01 / (len(self.allCards) - 1))
+
         cpd = TabularCPD(
             variable=slot,
             variable_card=len(self.allCards),
-            values=[values],
-            state_names={slot: self.allCards}
+            values=[[v] for v in values]
         )
         self.model.remove_cpds(self.model.get_cpds(slot))
         self.model.add_cpds(cpd)
         self.inference = VariableElimination(self.model)
-        
+
     def updateOnShuffle(self, slots):
         for slot in slots:
             cpd = TabularCPD(
                 variable=slot,
                 variable_card=len(self.allCards),
-                values=[[1/len(self.allCards)] * len(self.allCards)],
-                state_names={slot: self.allCards}
+                values=[[1 / len(self.allCards)] for _ in self.allCards]
             )
             self.model.remove_cpds(self.model.get_cpds(slot))
             self.model.add_cpds(cpd)
         self.inference = VariableElimination(self.model)
-        
+
     def getMostLikelyCards(self):
-        
         mostLikely = {}
-        
         for slot in ['O1_C1', 'O1_C2', 'O1_C3']:
             q = self.inference.map_query(variables=[slot])
             mostLikely[slot] = q[slot]
@@ -120,6 +117,17 @@ class AI:
         self.other1Cards = []
         self.other2Cards = []
         self.rememberOtherCards = [0, 0, 0]
+        self.cardDeck = createDeck()
+        self.bayesAI = BayesianAI(self.cardDeck)
+        
+    def updateAIMemory(self, moveType, targetPlayer, seenCard = True):
+        
+        if moveType == 'swap':
+            slot = '01_C1'
+            self.bayesAI.updateOnObservation(slot, seenCard)
+            
+        elif moveType == 'shuffle':
+            self.bayesAI.updateOnShuffle(['O1_C1', 'O1_C2', 'O1_C3'])
         
     def add(self, p, a1, a2):
         self.playerCards = p
@@ -332,9 +340,12 @@ class Player:
             self.wild()
 
 def cost(card):
-        temp = cardVal(card)
-        retCost = weights[temp]
-        return retCost      
+    if isinstance(card, int):
+        return card  # already a weight
+    elif isinstance(card, str):
+        return weights[cardVal(card)]
+    else:
+        raise ValueError(f"Unexpected card type: {type(card)}, value: {card}")
     
 def playBot(me: AI, player: Player, bot1: AI, bot2: AI, cardDrawn):
     
@@ -373,7 +384,17 @@ def playBot(me: AI, player: Player, bot1: AI, bot2: AI, cardDrawn):
         print(f"Player - {player.hand}")
         print(f"bot1 - {bot1.hand}")
         print(f"bot2 - {bot2.hand}")
-        choice = random.randint(1, 3)
+        # choice = random.randint(1, 3)
+        
+        likely = me.bayesAI.getMostLikelyCards()
+        
+        targets = {
+            1: [likely['O1_C1'], likely['O1_C2'], likely['O1_C3']],
+            2: me.other1Cards, 
+            3: me.other2Cards
+        }
+        
+        choice = max(targets.items(), key=lambda item: max(cost(c) for c in item[1] if c is not None))[0]
         
         if choice == 1:
             cIdx = player.calculateHeuristic()
@@ -395,7 +416,13 @@ def playBot(me: AI, player: Player, bot1: AI, bot2: AI, cardDrawn):
         print(f"bot2 - {bot2.hand}")
         
     elif str(cardVal(cardDrawn)) == "9":
-        choice = random.randint(1, 3)
+        targets = {
+            1: player.hand,
+            2: bot1.hand,
+            3: bot2.hand
+        }
+
+        choice = max(targets.items(), key=lambda item: max(cost(c) for c in item[1] if c is not None))[0]
         
         if choice == 1:
             player.hand = nineBot(me = me, player = player)
@@ -404,12 +431,14 @@ def playBot(me: AI, player: Player, bot1: AI, bot2: AI, cardDrawn):
             
         elif choice == 2:
             bot1.hand = nineBot(me = me, player = bot1)
-            me.other1Cards = player.hand
+            bot1.shuffled = True
+            me.other1Cards = bot1.hand
             me.rememberOtherCards[1] = 2
             
         else:
             bot2.hand = nineBot(me = me, player = bot2)
-            me.other2Cards = player.hand
+            bot2.shuffled = True
+            me.other2Cards = bot2.hand
             me.rememberOtherCards[2] = 2
         
     elif str(cardVal(cardDrawn)) == "C":
