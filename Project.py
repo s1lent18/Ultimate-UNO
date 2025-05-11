@@ -1,18 +1,19 @@
-# Draw 4 acts as a turnable
-# Skip Lets you skip your turn
 # Wild Card Lets you see your own cards
 # 9 of any color Lets you See the and Shuffle any opponent's cards
 # 7 of any color Lets you swap your one card with any card of any opponent
 
 import random
-from typing import List    
+import time
+from typing import List  
+from pgmpy.models import BayesianNetwork
+from pgmpy.inference import VariableElimination
+from pgmpy.factors.discrete import TabularCPD  
 
 cards = [
-    "R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "RRev", "RRev", "RSkip", "RSkip", "R+2", "R+2",
-    "G0", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "GRev", "GRev", "GSkip", "GSkip", "G+2", "G+2",
-    "B0", "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "BRev", "BRev", "BSkip", "BSkip", "B+2", "B+2",
-    "Y0", "Y1", "Y2", "Y3", "Y4", "Y5", "Y6", "Y7", "Y8", "Y9", "YRev", "YRev", "YSkip", "YSkip", "Y+2", "Y+2",
-    "W+4", "W+4", "WC", "WC"
+    "R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "RRev", "RRev", "RSkip", "RSkip", "W+4",
+    "G0", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "GRev", "GRev", "GSkip", "GSkip", "W+4",
+    "B0", "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "BRev", "BRev", "BSkip", "BSkip", "WC",
+    "Y0", "Y1", "Y2", "Y3", "Y4", "Y5", "Y6", "Y7", "Y8", "Y9", "YRev", "YRev", "YSkip", "YSkip", "WC"
 ]
 
 deck = cards.copy()
@@ -44,7 +45,72 @@ def pick():
     card = random.randint(0, len(deck) - 1)
     return deck[card]
 
+class BayesianAI:
+    def __init__(self, allCards):
+        self.allCards = allCards
+        self.model = BayesianNetwork()
+        self.inference = None
+        self.setupModel()
+        
+    def setupModel(self):
+        slots = ['O1_C1', 'O1_C2', 'O1_C3']
+        
+        for slot in slots:
+            self.model.add_node(slot)
+            
+        for slot in slots:
+            cpd = TabularCPD(
+                variable = slot,
+                variable_card = len(self.allCards),
+                values = [[1 / len(self.allCards)] * len(self.allCards)],
+                state_names = {slot: self.allCards}
+            )
+            self.model.add_cpds(cpd)
+            
+        self.inference = VariableElimination(self.model)
+        
+    def updateOnObservation(self, slot, card):
+        values = []
+        for c in self.allCards:
+            if c == card:
+                values.append(0.99)
+                
+            else:
+                values.appned(0.01 / (len(self.allCards) - 1))
+                
+        cpd = TabularCPD(
+            variable=slot,
+            variable_card=len(self.allCards),
+            values=[values],
+            state_names={slot: self.allCards}
+        )
+        self.model.remove_cpds(self.model.get_cpds(slot))
+        self.model.add_cpds(cpd)
+        self.inference = VariableElimination(self.model)
+        
+    def updateOnShuffle(self, slots):
+        for slot in slots:
+            cpd = TabularCPD(
+                variable=slot,
+                variable_card=len(self.allCards),
+                values=[[1/len(self.allCards)] * len(self.allCards)],
+                state_names={slot: self.allCards}
+            )
+            self.model.remove_cpds(self.model.get_cpds(slot))
+            self.model.add_cpds(cpd)
+        self.inference = VariableElimination(self.model)
+        
+    def getMostLikelyCards(self):
+        
+        mostLikely = {}
+        
+        for slot in ['O1_C1', 'O1_C2', 'O1_C3']:
+            q = self.inference.map_query(variables=[slot])
+            mostLikely[slot] = q[slot]
+        return mostLikely
+
 class AI:
+    
     def __init__(self):
         self.hand = self.assignCards()
         self.memory = self.hand.copy()
@@ -53,14 +119,14 @@ class AI:
         self.playerCards = []
         self.other1Cards = []
         self.other2Cards = []
-        self.rememberOtherCards = [False, False, False]
+        self.rememberOtherCards = [0, 0, 0]
         
     def add(self, p, a1, a2):
         self.playerCards = p
         self.other1Cards = a1
         self.other2Cards = a2
         
-    def assignCards(self) -> List[int]:
+    def assignCards(self):
         arr = []
         for i in range(3):
             card = random.randint(0, len(deck) - 1)
@@ -71,11 +137,25 @@ class AI:
     def calculateHeuristic(self):
         idx = max(range(len(self.hand)), key=lambda i: weights[self.hand[i][1:]])
         return idx     
+     
+    def calculateWinning(self):
+        summ = 0
+        for card in self.hand:
+            summ += weights[cardVal(card)]
             
+        return summ
+               
 class Player:
     def __init__(self):
         self.hand = self.assignCards()
         
+    def calculateWinning(self):
+        summ = 0
+        for card in self.hand:
+            summ += weights[cardVal(card)]
+            
+        return summ    
+    
     def assignCards(self) -> List[int]:
         arr = []
         for i in range(3):
@@ -90,23 +170,31 @@ class Player:
     
     def seven(self, bot: AI):
         
-        myCard = int(input("Enter your card index you want to exchange"))
-        
-        theirCard = int(input("Enter the card of AI you want"))
-        
-        self.hand[myCard], bot.hand[theirCard] = bot.hand[theirCard], self.hand[myCard]
-        
-        return player, bot    
-    
-    def draw4(self, p2, p3, p4):
-        temp = p1
-        p1 = p2
-        p2 = p3
-        p3 = p4
-        p4 = temp
-        return p1, p2, p3, p4
+        while True:
+            try:
+                myCard = int(input("Enter your card index to exchange (1-3): "))
+                if 1 <= myCard <= 3:
+                    break
+                else:
+                    print("Invalid input. Please enter a number between 1 and 3")
+            except ValueError:
+                print("Please enter a valid integer")
 
-    def nine(self, player):
+        while True:
+            try:
+                theirCard = int(input("Enter the AI's card index to take (1-3): "))
+                if 1 <= theirCard <= 3:
+                    break
+                else:
+                    print("Invalid input. Please enter a number between 1 and 3")
+            except ValueError:
+                print("Please enter a valid integer")
+        
+        self.hand[myCard - 1], bot.hand[theirCard - 1] = bot.hand[theirCard - 1], self.hand[myCard - 1]
+        
+        return self.hand, bot, (myCard - 1), (theirCard - 1)    
+  
+    def nine(self, player: AI):
         print(player)
         flag = 1
         while flag:
@@ -116,7 +204,7 @@ class Player:
             else:
                 num1 = int(input("Enter the card number you want to change: "))
                 num2 = int(input("Enter the card number you want to change with: "))
-                player[num1], player[num2] = player[num2], player[num1]
+                player.hand[num1 - 1], player.hand[num2 - 1] = player.hand[num2 - 1], player.hand[num1 - 1]
                 
             print(player)
             
@@ -135,40 +223,113 @@ class Player:
             
             card = self.hand[choice - 1]
             
-            self.hand.remove(card)
-            self.hand.append(cardDrawn)
+            for i in range(len(self.hand)):
+                if self.hand[i] == card:
+                    self.hand[i] = cardDrawn
             
             cardDrawn = card
+            
+        print(f"Card Drawn for Check - {cardDrawn}")    
             
         if str(cardVal(cardDrawn)) == "7":
             
             botChoice = int(input("Enter the AI Bot Number [1, 2, 3] to want to exchange with"))
             
             if botChoice == 1:
-                self.seven(bot=bot1)
+                
+                if bot2.rememberOtherCards[1] == 2:
+                    
+                    bot2.rememberOtherCards[1] = 1
+                    
+                if bot3.rememberOtherCards[1] == 2:
+                    
+                    bot3.rememberOtherCards[1] = 1
+                
+                self.hand, bot1, myCard, theirCard = self.seven(bot=bot1)
+                
+                bot2.playerCards[myCard], bot2.other1Cards[theirCard] = bot2.other1Cards[theirCard], bot2.playerCards[myCard]
+                
+                bot3.playerCards[myCard], bot3.other1Cards[theirCard] = bot3.other1Cards[theirCard], bot3.playerCards[myCard]
+
             elif botChoice == 2:
-                self.seven(bot=bot2)
+                
+                if bot2.rememberOtherCards[1] == 2:
+                    
+                    bot2.rememberOtherCards[1] = 1
+                    
+                if bot3.rememberOtherCards[1] == 2:
+                    
+                    bot3.rememberOtherCards[1] = 1
+                
+                self.hand, bot2, myCard, theirCard = self.seven(bot=bot2)
+                
+                bot1.playerCards[myCard], bot1.other1Cards[theirCard] = bot1.other1Cards[theirCard], bot1.playerCards[myCard]
+                
+                bot3.playerCards[myCard], bot3.other2Cards[theirCard] = bot3.other2Cards[theirCard], bot3.playerCards[myCard]
+
             elif botChoice == 3:
-                self.seven(bot=bot3)
+                
+                if bot1.rememberOtherCards[2] == 2:
+                    
+                    bot1.rememberOtherCards[2] = 1
+                    
+                if bot2.rememberOtherCards[2] == 2:
+                    
+                    bot2.rememberOtherCards[2] = 1
+                
+                self.hand, bot3, myCard, theirCard = self.seven(bot=bot3)
+                
+                bot1.playerCards[myCard], bot1.other2Cards[theirCard] = bot1.other2Cards[theirCard], bot1.playerCards[myCard]
+                
+                bot2.playerCards[myCard], bot3.other2Cards[theirCard] = bot3.other2Cards[theirCard], bot3.playerCards[myCard]
                 
         elif str(cardVal(cardDrawn)) == "9":
             botChoice = int(input("Enter the AI Bot Number [1, 2, 3] to want to see & shuffle their cards"))
             
             if botChoice == 1:
+                
                 bot1.shuffled = True
+                
+                if bot2.rememberOtherCards[1] == 2:
+                    
+                    bot2.rememberOtherCards[1] = 1
+                    
+                if bot3.rememberOtherCards[1] == 2:
+                    
+                    bot3.rememberOtherCards[1] = 1
+                    
                 self.nine(player=bot1)
+                
             elif botChoice == 2:
+                
                 bot2.shuffled = True
+                
+                if bot2.rememberOtherCards[1] == 2:
+                    
+                    bot2.rememberOtherCards[1] = 1
+                    
+                if bot3.rememberOtherCards[1] == 2:
+                    
+                    bot3.rememberOtherCards[1] = 1
+                
                 self.nine(player=bot2)
+                
             elif botChoice == 3:
+                
                 bot3.shuffled = True
+                
+                if bot1.rememberOtherCards[2] == 2:
+                    
+                    bot1.rememberOtherCards[2] = 1
+                    
+                if bot2.rememberOtherCards[2] == 2:
+                    
+                    bot2.rememberOtherCards[2] = 1
+                
                 self.nine(player=bot3)
 
         elif str(cardVal(cardDrawn)) == "C":
             self.wild()
-
-        elif str(cardVal(cardDrawn)) == "+4":
-            self.hand, ai1.hand, ai2.hand, ai3.hand = self.draw4(p2 = ai1.hand, p3 = ai2.hand, p4 = ai3.hand)
 
 def cost(card):
         temp = cardVal(card)
@@ -196,110 +357,115 @@ def playBot(me: AI, player: Player, bot1: AI, bot2: AI, cardDrawn):
         card = me.hand[idx]
         
         print(f"Card: {card}")
+        
+        for i in range(len(me.hand)):
+            if me.hand[i] == card:
+                me.hand[i] = cardDrawn
+                
+        for i in range(len(me.memory)):
+            if me.memory[i] == card:
+                me.memory[i] = cardDrawn
     
-        me.hand.remove(card)
-        me.hand.append(cardDrawn)
         cardDrawn = card
         
     if str(cardVal(cardDrawn)) == "7":
+        print(f"me - {me.hand}")
+        print(f"Player - {player.hand}")
+        print(f"bot1 - {bot1.hand}")
+        print(f"bot2 - {bot2.hand}")
         choice = random.randint(1, 3)
         
         if choice == 1:
             cIdx = player.calculateHeuristic()
+            me.hand, player.hand = sevenBot(bot=me, player=player, pIdx=choice - 1, changeIdx=cIdx)
+            bot1.rememberOtherCards[0] = 1
+            bot2.rememberOtherCards[0] = 1
         elif choice == 2:
             cIdx = bot1.calculateHeuristic()
+            me.hand, bot1.hand = sevenBot(bot=me, player=bot1, pIdx=choice - 1, changeIdx=cIdx)
+            bot2.rememberOtherCards[1] = 1
         elif choice == 3:
             cIdx = bot2.calculateHeuristic()
-        
-        sevenBot(bot=me, player=choice, changeIdx=cIdx)
+            me.hand, bot2.hand = sevenBot(bot=me, player=bot2, pIdx=choice - 1, changeIdx=cIdx)
+            bot1.rememberOtherCards[2] = 1
+            
+        print(f"me - {me.hand}")
+        print(f"Player - {player.hand}")
+        print(f"bot1 - {bot1.hand}")
+        print(f"bot2 - {bot2.hand}")
         
     elif str(cardVal(cardDrawn)) == "9":
         choice = random.randint(1, 3)
-        nineBot(bot = me, player = choice)
+        
+        if choice == 1:
+            player.hand = nineBot(me = me, player = player)
+            me.playerCards = player.hand
+            me.rememberOtherCards[0] = 2
+            
+        elif choice == 2:
+            bot1.hand = nineBot(me = me, player = bot1)
+            me.other1Cards = player.hand
+            me.rememberOtherCards[1] = 2
+            
+        else:
+            bot2.hand = nineBot(me = me, player = bot2)
+            me.other2Cards = player.hand
+            me.rememberOtherCards[2] = 2
         
     elif str(cardVal(cardDrawn)) == "C":
         wildBot(bot = me)
     
     me.numTurns += 1
     
-def sevenBot(bot: AI, player, changeIdx):  
+def sevenBot(bot: AI, player, pIdx: int, changeIdx):  
     
-    print("Bot Called 7")
+    print(f"Bot Called 7 with - {pIdx}")
     
-    remember = random.random() < 0.6
+    remember1 = random.random() < 0.98
+    remember2 = random.random() < 0.45
     
     idx = bot.calculateHeuristic()
     
     memory = []
     
-    if player == 1:
-            if bot.rememberOtherCards[0]:
-                memory = bot.playerCards.copy() if remember else random.sample(bot.playerCards, len(bot.playerCards))
-                
-            else:
-                memory = bot.playerCards.copy()
-                changeIdx = random.randint(0, 3)
-                
-    elif player == 2:
-        if bot.rememberOtherCards[1]:
-            memory = bot.other1Cards.copy() if remember else random.sample(bot.other1Cards, len(bot.other1Cards))
+    if bot.rememberOtherCards[pIdx] == 2:
+        memory = player.hand.copy() if remember1 else random.sample(player.hand, len(player.hand))
             
-        else:
-            memory = bot.other1Cards.copy()
-            changeIdx = random.randint(0, 3)
+    elif bot.rememberOtherCards[pIdx] == 1:
+        memory = player.hand.copy() if remember2 else random.sample(player.hand, len(player.hand))
             
-    elif player == 3:
-        if bot.rememberOtherCards[2]:
-            memory = bot.other2Cards.copy() if remember else random.sample(bot.other2Cards, len(bot.other2Cards))
-            
-        else:
-            memory = bot.other2Cards.copy()
-            changeIdx = random.randint(0, 3)       
+    else:
+        memory = player.hand.copy()
+        changeIdx = random.randint(0, 2)  
         
     myCard = bot.hand[idx]
     theirCard = memory[changeIdx]
     
-    bot.hand.remove(myCard)
-    bot.hand.append(theirCard)
+    for i in range(len(bot.hand)):
+        if bot.hand[i] == myCard:
+            bot.hand[i] = theirCard
+            break
+
+    for i in range(len(player.hand)):
+        if player.hand[i] == theirCard:
+            player.hand[i] = myCard
+            break
     
-    memory.remove(theirCard)
-    memory.append(myCard)
-    
-    if player == 1:
-        bot.playerCards = memory
-    elif player == 2:
-        bot.other1Cards = memory
-    elif player == 3:
-        bot.other2Cards = memory
-    
-    return memory            
+    return bot.hand, player.hand        
         
-def nineBot(bot: AI, player):
+def nineBot(me: AI, player: AI):
     
     print("Bot Called 9")
     
-    memory = []
+    print(f"Before: {player.hand}")
     
-    if player == 1:
-        bot.rememberOtherCards[0] = True
-        memory = bot.playerCards.copy()
-    elif player == 2:
-        bot.rememberOtherCards[1] = True
-        memory = bot.other1Cards.copy()
-    elif player == 3:
-        bot.rememberOtherCards[2] = True
-        memory = bot.other2Cards.copy()
+    random.shuffle(player.hand)
     
-    random.shuffle(memory)
-    
-    if player == 1:
-        bot.playerCards = memory
-    elif player == 2:
-        bot.other1Cards = memory
-    elif player == 3:
-        bot.other2Cards = memory
+    print(f"After: {player.hand}")
+
+    me.memory = player.hand
             
-    return memory 
+    return player.hand
 
 def wildBot(bot: AI):
     bot.numTurns = 0
@@ -321,33 +487,55 @@ print(f"Player - 2 Cards: {ai1.hand}")
 print(f"Player - 3 Cards: {ai2.hand}")
 print(f"Player - 4 Cards: {ai3.hand}")
 
-while len(deck) > 0:
+while True:
     
     last = pick()
     
     deck.remove(last)
     
-    print(f"Card Drawn: {last}")
+    print(f"Card Drawn: {last} & Turn Off - {lastTurn}")    
     
-    if str(cardVal(last)) == "Skip":
-        
-        lastTurn = (lastTurn + 1) % 4
-        
-    print(f"Turn Off: {lastTurn}")
+    if len(deck) == 0:
+        break
         
     if lastTurn == 1:
         print("Player - 1 Turn:")
         
         player.playHuman(bot1 = ai1, bot2 = ai2, bot3 = ai3, cardDrawn = last)
         
+        print("\n")
+        
+        time.sleep(1.5)
+        
+    if len(deck) == 0:
+        break
+        
     if lastTurn == 2:
         playBot(me = ai1, player = player, bot1 = ai2, bot2 = ai3, cardDrawn = last)    
         
+        print("\n")
+        
+        time.sleep(1.5)
+        
+    if len(deck) == 0:
+        break
+        
     if lastTurn == 3:
         playBot(me = ai2, player = player, bot1 = ai1, bot2 = ai3, cardDrawn = last) 
+        
+        print("\n")
+        
+        time.sleep(1.5)
+        
+    if len(deck) == 0:
+        break
     
     if lastTurn == 4:
         playBot(me = ai3, player = player, bot1 = ai1, bot2 = ai2, cardDrawn = last)
+        
+        print("\n")
+        
+        time.sleep(1.5)
         
     lastTurn += 1
     if lastTurn > 4:
@@ -357,3 +545,16 @@ while len(deck) > 0:
     print(f"Player - 2 Cards: {ai1.hand}")
     print(f"Player - 3 Cards: {ai2.hand}")
     print(f"Player - 4 Cards: {ai3.hand}")
+    
+array = []
+
+array.append(("Player", player.calculateWinning()))
+array.append(("AI - 1", ai1.calculateWinning()))
+array.append(("AI - 2", ai2.calculateWinning()))
+array.append(("AI - 3", ai3.calculateWinning()))
+
+array.sort(key=lambda x: x[1])
+
+print(array)
+
+print(f"{array[0][0]} Won the game with {array[0][1]} Weight Values")
